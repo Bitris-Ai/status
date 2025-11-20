@@ -1,42 +1,47 @@
-# Bitris AI System Status
+# Bitris AI — Service Status & Platform Reliability
 
-This repository powers the public status portal at https://status.bitris.ai. Workflows check our production entry points, log response times, and publish the static site that reflects Bitris branding only.
+**[https://status.bitris.ai](https://status.bitris.ai)** delivers real-time visibility into the health, performance, and availability of the Bitris AI ecosystem. Our monitoring framework continuously evaluates all mission-critical surfaces to ensure the seamless reliability our users expect.
 
-## Monitored Surfaces
+## Platform Coverage
 
-| Service            | Endpoint                               | Purpose                                    |
-| ------------------ | -------------------------------------- | ------------------------------------------ |
-| Bitris AI Platform | https://www.bitris.ai/api/status       | Core API health & dependency rollups       |
-| Voice Services     | https://www.bitris.ai/api/voice/status | Latency + availability for voice synthesis |
+The status portal tracks every major component powering Bitris AI’s intelligence and user experience:
 
-## Automation Cadence
+| Service            | Endpoint                                                                                 | Description                                         |
+| ------------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| **Bitris AI API**  | [https://www.bitris.ai/api/status](https://www.bitris.ai/api/status)                     | Core platform health & upstream dependencies        |
+| **Voice Services** | [https://www.bitris.ai/api/voice/status](https://www.bitris.ai/api/voice/status)         | Availability and performance of voice synthesis     |
+| **Web Interface**  | [https://www.bitris.ai/web-interface/status](https://www.bitris.ai/web-interface/status) | Frontend delivery, latency, and interface stability |
 
-| Workflow            | Interval       | Notes                            |
-| ------------------- | -------------- | -------------------------------- |
-| `uptime.yml`        | _/5 _ \* \* \* | Availability + incident tracking |
-| `response-time.yml` | 0 _/6 _ \* \*  | Latency sampling                 |
-| `graphs.yml`        | 0 0 \* \* \*   | Generate historical charts       |
-| `site.yml`          | 0 1 \* \* \*   | Build & deploy static site       |
-| `summary.yml`       | 0 0 \* \* \*   | Update repo summaries            |
+These checks reflect the authentic operational state of the platform at any given moment.
 
-## Branding Assets
+## Update Cadence
 
-- `assets/theme.css`: matches Bitris web aesthetic (dark, electric accents)
-- `assets/bitris-logo.svg` and `assets/bitris-icon.svg`: used for logo + favicon
-- `.upptimerc.yml`: references only Bitris endpoints, copy, and assets
+Bitris AI maintains an enterprise-grade monitoring schedule designed for speed, accuracy, and full transparency:
 
-## Custom Graph Renderer
+| Process               | Frequency       | Purpose                                     |
+| --------------------- | --------------- | ------------------------------------------- |
+| **Availability Scan** | Every **1 min** | Immediate detection of downtime/degradation |
+| **Latency Sampling**  | Every 2 mins    | Continuous measurement of response speeds   |
+| **Historical Charts** | Daily           | Performance trend analysis                  |
+| **Site Rebuild**      | Daily           | Publishes updated status visuals            |
+| **Summary Updates**   | Daily           | Refreshes overall service insights          |
 
-- `scripts/generate-bitris-graphs.mjs`: converts `history/summary.json` data into Bitris-branded SVG sparklines inside `graphs/bitris-*.svg`.
-- `scripts/README.md`: usage details for running the renderer locally or inside GitHub Actions.
-- Workflow integration: `Bitris Graphs Sync` now runs the script after the default Upptime step so the published site can reference bespoke visuals.
+The result: clients always see an accurate, near-real-time view of platform reliability.
 
-## Local Notes
+## Branded Experience
 
-1. Node 20+ (GitHub runners already satisfy this).
-2. Edit `.upptimerc.yml` for new monitors/branding tweaks.
-3. Run `Static Site CI` in Actions to redeploy immediately after config changes.
+Every part of the status experience reflects Bitris AI’s design principles:
 
----
+* Official Bitris AI logos and branding across all system pages.
+* Custom Bitris-branded SVG charts and sparklines for a unified visual identity.
+* Optimized layouts that mirror the quality and polish of our main platform.
 
-© 2025 Bitris AI. All monitoring data, branding, and copy remain internal—no external attribution or vendor disclosure anywhere on the portal.
+## Operational Notes
+
+* Monitoring is powered by a redundant, cloud-native architecture.
+* Updates to endpoints or visual identity automatically flow through scheduled deployments.
+* A manual rebuild can be triggered for instant propagation after configuration changes.
+
+
+
+**© 2025 Bitris AI — Enterprise-level reliability, delivered with clarity and trust.**
