@@ -17,7 +17,7 @@ status-website:
   introMessage: "Real-time operational monitoring for all Bitris AI services"
   logoUrl: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-logo.svg
   faviconSvg: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-icon.svg
-  themeUrl: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/theme.css
+  themeUrl: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/theme.css?v=2
   navbar:
     - title: Home
       href: https://www.bitris.ai
