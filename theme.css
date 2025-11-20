@@ -1,0 +1,483 @@
+/* Bitris AI Status Page - Custom Theme */
+/* Matches web-interface design system with dark mode and glassmorphism */
+
+:root {
+  /* Bitris Brand Colors - matched from web-interface */
+  --brand: #6ea8ff;
+  --brand-alt: #9fd1ff;
+  --brand-deep: #4f63ff;
+  
+  /* Dark theme palette */
+  --background: #000000;
+  --background-subtle: #0a0a0a;
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --surface-elevated: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-muted: #666666;
+  
+  /* Status colors */
+  --status-up: #10b981;
+  --status-down: #ef4444;
+  --status-degraded: #f59e0b;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-orb: 0 18px 48px rgba(110, 168, 255, 0.25);
+}
+
+/* Hide Upptime branding - AGGRESSIVE */
+footer * {
+  display: none !important;
+}
+
+footer::before {
+  content: "© 2025 Bitris AI - All systems monitored in real-time" !important;
+  display: block !important;
+  color: var(--text-muted) !important;
+  font-size: 0.875rem !important;
+  text-align: center !important;
+  padding: 2.5rem 0 !important;
+}
+
+a[href*="upptime.js.org"],
+a[href*="github.com/upptime"],
+footer a[href*="anandchowdhary"],
+footer a[href*="pabio.com"],
+.footer-upptime-branding,
+footer p:has(a[href*="upptime"]),
+footer div:has(a[href*="upptime"]),
+footer span:has(a[href*="upptime"]),
+footer small:has(a[href*="upptime"]),
+footer .text-sm:has(a[href*="upptime"]) {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Hide any footer paragraph that contains links */
+footer p a,
+footer .text-sm a,
+footer small a {
+  display: none !important;
+}
+
+/* Also hide the parent paragraph if it only contains hidden links */
+footer p:not(:has(*:not(a))),
+footer .text-sm:not(:has(*:not(a))),
+footer small:not(:has(*:not(a))) {
+  display: none !important;
+}
+
+/* Body styling - dark background with gradient */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(to bottom, var(--background), var(--background-subtle)) !important;
+  color: var(--text-primary) !important;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Override Upptime's light theme */
+html,
+body,
+#__next,
+main {
+  background: var(--background) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Header - glassmorphic with subtle border */
+header {
+  background: var(--surface) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border) !important;
+  padding: 1.5rem 0 !important;
+  box-shadow: var(--shadow-sm);
+}
+
+header h1 {
+  color: var(--brand) !important;
+  font-size: 1.875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+
+header p {
+  color: var(--text-secondary) !important;
+  font-size: 1rem !important;
+  margin-top: 0.5rem !important;
+}
+
+/* Navigation links */
+nav a {
+  color: var(--text-secondary) !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+  font-weight: 500 !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.5rem !important;
+}
+
+nav a:hover {
+  color: var(--brand) !important;
+  background: var(--surface-hover) !important;
+}
+
+/* Status badges - pill style with glow */
+.badge,
+.status-badge,
+[class*="badge"] {
+  padding: 0.375rem 1rem !important;
+  border-radius: 9999px !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  transition: all 0.2s ease !important;
+}
+
+.badge-up,
+.status-up,
+[class*="up"] {
+  background: var(--status-up) !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.badge-down,
+.status-down,
+[class*="down"] {
+  background: var(--status-down) !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.badge-degraded,
+.status-degraded,
+[class*="degraded"] {
+  background: var(--status-degraded) !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+/* Service cards - glassmorphic design */
+.service-card,
+[class*="status-card"],
+.card,
+.summary,
+article {
+  background: var(--surface) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+  margin-bottom: 1rem !important;
+  transition: all 0.3s ease !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.service-card:hover,
+[class*="status-card"]:hover,
+.card:hover,
+article:hover {
+  background: var(--surface-hover) !important;
+  border-color: rgba(110, 168, 255, 0.3) !important;
+  box-shadow: var(--shadow-orb) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Status summary banner */
+.status-summary,
+.summary-banner,
+[class*="summary"] {
+  background: var(--surface-elevated) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 1rem !important;
+  padding: 1.25rem 1.5rem !important;
+  margin-bottom: 2rem !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.status-summary.operational {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  background: rgba(16, 185, 129, 0.05) !important;
+}
+
+.status-summary.degraded {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  background: rgba(245, 158, 11, 0.05) !important;
+}
+
+.status-summary.down {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+}
+
+/* Headings and text */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+
+h2 {
+  font-size: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+  color: var(--brand) !important;
+}
+
+p, span, div {
+  color: var(--text-secondary) !important;
+}
+
+strong, b {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* Links */
+a {
+  color: var(--brand-alt) !important;
+  text-decoration: none !important;
+  transition: color 0.2s ease !important;
+}
+
+a:hover {
+  color: var(--brand) !important;
+}
+
+/* Graphs container */
+.graph-container,
+.graph,
+.chart {
+  background: var(--surface) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 0.75rem !important;
+  padding: 1.25rem !important;
+  margin: 1rem 0 !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* Tables */
+table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 0.5rem !important;
+  background: transparent !important;
+}
+
+thead {
+  background: var(--surface) !important;
+}
+
+th {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
+  padding: 1rem 1.5rem !important;
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+
+tr {
+  background: var(--surface) !important;
+  transition: all 0.2s ease !important;
+}
+
+tr:hover {
+  background: var(--surface-hover) !important;
+}
+
+td {
+  padding: 1rem 1.5rem !important;
+  color: var(--text-secondary) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+
+/* Footer */
+footer {
+  background: var(--surface) !important;
+  border-top: 1px solid var(--glass-border) !important;
+  padding: 2.5rem 0 !important;
+  margin-top: 4rem !important;
+  text-align: center !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+footer p {
+  color: var(--text-muted) !important;
+  font-size: 0.875rem !important;
+}
+
+/* Buttons */
+button,
+.button,
+[role="button"] {
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 0.5rem !important;
+  padding: 0.625rem 1.25rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+button:hover,
+.button:hover,
+[role="button"]:hover {
+  background: var(--surface-hover) !important;
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 20px rgba(110, 168, 255, 0.2) !important;
+}
+
+/* Tabs */
+.tab,
+[role="tab"] {
+  color: var(--text-secondary) !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.2s ease !important;
+  font-weight: 500 !important;
+}
+
+.tab.active,
+.tab:hover,
+[role="tab"][aria-selected="true"],
+[role="tab"]:hover {
+  color: var(--brand) !important;
+  background: var(--surface-hover) !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.25);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-deep);
+}
+
+/* Animations matching web-interface */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(110, 168, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(110, 168, 255, 0.4);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  header h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .service-card,
+  article {
+    padding: 1rem !important;
+  }
+  
+  table {
+    font-size: 0.875rem !important;
+  }
+  
+  th, td {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  nav a {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+/* Force dark mode on all elements */
+* {
+  border-color: var(--glass-border) !important;
+}
+
+input,
+textarea,
+select {
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 0.5rem !important;
+  padding: 0.625rem 1rem !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px rgba(110, 168, 255, 0.1) !important;
+}
+
+/* Response time indicators */
+.response-time-fast {
+  color: var(--status-up) !important;
+  font-weight: 600 !important;
+}
+
+.response-time-medium {
+  color: var(--status-degraded) !important;
+  font-weight: 600 !important;
+}
+
+.response-time-slow {
+  color: var(--status-down) !important;
+  font-weight: 600 !important;
+}
+/* Bitris footer branding removal script */
+body::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  animation: remove-branding 0.1s forwards;
+}
+
+@keyframes remove-branding {
+  to {
+    /* This triggers the script via animation-name event */
+  }
+}
