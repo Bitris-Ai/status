@@ -2,9 +2,9 @@
   {
     "name": "Bitris AI Platform",
     "url": "https://www.bitris.ai/api/status",
-    "icon": "https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-icon.svg",
+    "icon": "https://icons.duckduckgo.com/ip3/www.bitris.ai.ico",
     "slug": "bitris-ai-platform",
-    "status": "up",
+    "status": "down",
     "uptime": "100.00%",
     "uptimeDay": "100.00%",
     "uptimeWeek": "100.00%",
@@ -20,9 +20,9 @@
   {
     "name": "Voice Services",
     "url": "https://www.bitris.ai/api/voice/status",
-    "icon": "https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-icon.svg",
+    "icon": "https://icons.duckduckgo.com/ip3/www.bitris.ai.ico",
     "slug": "voice-services",
-    "status": "up",
+    "status": "down",
     "uptime": "100.00%",
     "uptimeDay": "100.00%",
     "uptimeWeek": "100.00%",
