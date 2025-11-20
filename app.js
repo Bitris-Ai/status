@@ -1,6 +1,26 @@
 const SUMMARY_URL = 'https://raw.githubusercontent.com/Bitris-Ai/status/main/history/summary.json';
 const API_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/main/api';
 const GRAPH_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/main/graphs';
+const LIVE_SERVICE_CONFIG = [
+  {
+    slug: 'bitris-ai-platform',
+    name: 'Bitris AI Platform',
+    liveUrl: 'https://www.bitris.ai/api/status',
+    url: 'https://www.bitris.ai/api/status'
+  },
+  {
+    slug: 'voice-services',
+    name: 'Voice Services',
+    liveUrl: 'https://www.bitris.ai/api/voice/status',
+    url: 'https://www.bitris.ai/api/voice/status'
+  },
+  {
+    slug: 'bitris-web-interface',
+    name: 'Bitris Web Interface',
+    liveUrl: 'https://www.bitris.ai/api/web-interface/status',
+    url: 'https://bitris.ai'
+  }
+];
 const GITHUB_REPO = 'Bitris-Ai/status';
 const GITHUB_ISSUES_ENDPOINT = `https://api.github.com/repos/${GITHUB_REPO}/issues`;
 const INCIDENT_REPORT_URL = `https://github.com/${GITHUB_REPO}/issues/new?labels=incident`;
@@ -33,12 +53,16 @@ const statusTitle = document.getElementById('status-title');
 const statusSubtitle = document.getElementById('status-subtitle');
 const statusBanner = document.getElementById('status-banner');
 const lastUpdated = document.getElementById('last-updated');
+const refreshButton = document.getElementById('refresh-now');
 const searchInput = document.getElementById('service-search');
 const incidentsMeta = document.getElementById('incidents-meta');
 const incidentGroups = document.getElementById('incident-groups');
 const githubAuthBtn = document.getElementById('github-auth-btn');
 const githubAuthHint = document.getElementById('github-auth-hint');
-const reportIncidentLink = document.getElementById('report-incident');
+const incidentModal = document.getElementById('incident-modal');
+const incidentForm = document.getElementById('incident-form');
+const incidentFormFeedback = document.getElementById('incident-form-feedback');
+const openIncidentModalBtn = document.getElementById('open-incident-modal');
 const themeToggle = document.getElementById('theme-toggle');
 const themeToggleText = document.querySelector('.theme-toggle__text');
 const themeToggleIcon = document.querySelector('.theme-toggle__icon');
@@ -54,6 +78,7 @@ const insights = {
 const relativeTimeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
 let services = [];
+let liveTelemetry = new Map();
 let currentRange = 'week';
 let currentFilter = 'all';
 let searchQuery = '';
@@ -65,9 +90,6 @@ let lastIncidentSync = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  if (reportIncidentLink) {
-    reportIncidentLink.href = INCIDENT_REPORT_URL;
-  }
   updateGithubUI();
   registerControls();
   hydrate().finally(startAutoRefresh);
@@ -139,6 +161,12 @@ function registerControls() {
   });
 
   githubAuthBtn?.addEventListener('click', handleGithubAuthToggle);
+  refreshButton?.addEventListener('click', () => hydrate({ reason: 'manual-refresh' }));
+  openIncidentModalBtn?.addEventListener('click', openIncidentModal);
+  incidentModal?.querySelectorAll('[data-close-modal]')?.forEach((node) =>
+    node.addEventListener('click', closeIncidentModal)
+  );
+  incidentForm?.addEventListener('submit', handleIncidentSubmit);
 }
 
 async function hydrate(options = {}) {
@@ -150,7 +178,12 @@ async function hydrate(options = {}) {
     if (!silent || services.length === 0) {
       setServicesPlaceholder('Loading live telemetry…');
     }
-    services = await fetchJSON(`${SUMMARY_URL}?t=${Date.now()}`);
+    const [summaryData, liveData] = await Promise.all([
+      fetchJSON(`${SUMMARY_URL}?t=${Date.now()}`),
+      fetchLiveTelemetry()
+    ]);
+    liveTelemetry = liveData;
+    services = mergeServiceData(summaryData, liveData);
     renderServices();
     updateGlobalStatus();
     updateInsights();
@@ -191,6 +224,10 @@ function renderServices() {
     card.dataset.slug = service.slug;
     card.dataset.status = service.status;
     card.dataset.match = `${service.name} ${service.url}`.toLowerCase();
+    const attentionLabel = service.status !== 'up' ? 'attention' : 'up';
+    const latencyLabel = service.live?.latency ? formatMs(service.live.latency) : formatMs(service.time);
+    const liveMessage = service.live?.message || service.url.replace(/^https?:\/\//, '');
+    const statusLabel = service.status === 'up' ? 'Operational' : service.status === 'degraded' ? 'Degraded' : 'Attention';
 
     card.innerHTML = `
       <header>
@@ -198,9 +235,9 @@ function renderServices() {
           <p class="eyebrow">${service.url.replace(/^https?:\/\//, '')}</p>
           <h4>${service.name}</h4>
         </div>
-        <span class="status-chip ${service.status}">
+        <span class="status-chip ${attentionLabel}">
           <span class="dot"></span>
-          ${service.status === 'up' ? 'Operational' : 'Attention'}
+          ${statusLabel}
         </span>
       </header>
       <div class="metric-grid">
@@ -214,12 +251,16 @@ function renderServices() {
         </div>
         <div class="metric">
           <span>Avg response</span>
-          <strong>${formatMs(service.time)}</strong>
+          <strong>${latencyLabel}</strong>
         </div>
       </div>
       <div class="graph-shell">
         <img src="${graphUrl(service.slug)}" alt="${service.name} response-time graph" loading="lazy" />
       </div>
+      <footer class="service-footer">
+        <p class="muted">${liveMessage}</p>
+        <a class="btn ghost" href="https://github.com/${GITHUB_REPO}/issues?q=${service.slug}" target="_blank" rel="noopener">Open incidents ↗</a>
+      </footer>
     `;
 
     fragment.appendChild(card);
@@ -255,7 +296,9 @@ function updateInsights() {
     `${services.length} surface${services.length === 1 ? '' : 's'}`
   );
 
-  const latencies = services.map((svc) => Number(svc.time)).filter((ms) => Number.isFinite(ms) && ms > 0);
+  const latencies = services
+    .map((svc) => Number(svc.live?.latency ?? svc.time))
+    .filter((ms) => Number.isFinite(ms) && ms > 0);
   const medianLatency = latencies.length ? median(latencies) : 0;
   setInsightText(insights.latency, medianLatency ? formatMs(medianLatency) : '—');
 
@@ -609,4 +652,153 @@ async function fetchJSON(url) {
     throw new Error(`Request failed (${response.status})`);
   }
   return response.json();
+}
+
+async function fetchLiveTelemetry() {
+  const timestamp = typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? () => performance.now()
+    : () => Date.now();
+  const results = await Promise.allSettled(
+    LIVE_SERVICE_CONFIG.map(async (service) => {
+      const start = timestamp();
+      const response = await fetch(service.liveUrl, { cache: 'no-store' });
+      const latency = timestamp() - start;
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch (error) {
+        payload = {};
+      }
+      return {
+        slug: service.slug,
+        ok: response.ok,
+        status: payload.status || (response.ok ? 'up' : 'down'),
+        message: payload.message || payload.description || response.statusText,
+        latency,
+        updatedAt: payload.updatedAt || new Date().toISOString()
+      };
+    })
+  );
+
+  const map = new Map();
+  results.forEach((result, index) => {
+    const config = LIVE_SERVICE_CONFIG[index];
+    if (result.status === 'fulfilled') {
+      map.set(config.slug, result.value);
+    } else {
+      map.set(config.slug, {
+        slug: config.slug,
+        status: 'unknown',
+        message: 'Live probe unavailable',
+        latency: NaN,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  });
+  return map;
+}
+
+function mergeServiceData(summary = [], liveMap = new Map()) {
+  const summaryBySlug = new Map(summary.map((svc) => [svc.slug, svc]));
+  return LIVE_SERVICE_CONFIG.map((svc) => {
+    const summaryEntry = summaryBySlug.get(svc.slug) || {};
+    const liveEntry = liveMap.get(svc.slug);
+    const status = normalizeStatus(liveEntry?.status || summaryEntry.status || 'unknown');
+    return {
+      ...summaryEntry,
+      ...svc,
+      live: liveEntry,
+      status,
+      uptime: summaryEntry.uptime || liveEntry?.uptime || '—',
+      uptimeMonth: summaryEntry.uptimeMonth || summaryEntry.uptime,
+      time: summaryEntry.time || liveEntry?.latency || 0,
+      url: summaryEntry.url || svc.url
+    };
+  });
+}
+
+function normalizeStatus(status = 'unknown') {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('degrad')) return 'degraded';
+  if (normalized.includes('down') || normalized.includes('incident')) return 'down';
+  if (normalized.includes('attention') || normalized.includes('maintenance')) return 'attention';
+  if (normalized.includes('up')) return 'up';
+  return 'attention';
+}
+
+function openIncidentModal() {
+  if (!incidentModal) return;
+  incidentModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeIncidentModal() {
+  if (!incidentModal) return;
+  incidentModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  incidentForm?.reset();
+  if (incidentFormFeedback) incidentFormFeedback.textContent = '';
+}
+
+async function handleIncidentSubmit(event) {
+  event.preventDefault();
+  if (!incidentForm || !incidentFormFeedback) return;
+  if (!githubToken) {
+    incidentFormFeedback.textContent = 'Connect GitHub to submit incidents.';
+    incidentFormFeedback.style.color = 'var(--danger)';
+    return;
+  }
+  const formData = new FormData(incidentForm);
+  const title = formData.get('title')?.toString().trim();
+  const service = formData.get('service')?.toString();
+  const impact = formData.get('impact')?.toString();
+  const bodyInput = formData.get('body')?.toString().trim();
+  if (!title || !service || !impact || !bodyInput) {
+    incidentFormFeedback.textContent = 'Fill every field before submitting.';
+    incidentFormFeedback.style.color = 'var(--danger)';
+    return;
+  }
+  incidentFormFeedback.textContent = 'Submitting to GitHub…';
+  incidentFormFeedback.style.color = 'var(--text-muted)';
+  try {
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
+      method: 'POST',
+      headers: {
+        ...getGitHubHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title,
+        body: buildIncidentBody({ title, service, impact, body: bodyInput }),
+        labels: ['incident', service, impact]
+      })
+    });
+    if (!response.ok) {
+      throw new Error(`GitHub responded with ${response.status}`);
+    }
+    incidentFormFeedback.textContent = 'Incident logged successfully.';
+    incidentFormFeedback.style.color = 'var(--success)';
+    incidentForm.reset();
+    setTimeout(() => {
+      closeIncidentModal();
+      loadIncidents();
+    }, 1200);
+  } catch (error) {
+    incidentFormFeedback.textContent = error.message;
+    incidentFormFeedback.style.color = 'var(--danger)';
+  }
+}
+
+function buildIncidentBody({ title, service, impact, body }) {
+  return `### Service
+${service}
+
+### Impact
+${impact}
+
+### Details
+${body}
+
+---
+Submitted via Bitris Status UI at ${new Date().toISOString()}`;
 }
