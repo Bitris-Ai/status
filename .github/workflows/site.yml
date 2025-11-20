@@ -23,17 +23,18 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           token: ${{ github.token }}
-      - name: Generate Bitris site
-        uses: upptime/uptime-monitor@v1.41.0
-        with:
-          command: "site"
-        env:
-          GH_PAT: ${{ github.token }}
+      - name: Prepare Bitris static bundle
+        run: |
+          mkdir -p dist
+          rsync -av --delete status-ui/ dist/
+          if [ -f CNAME ]; then
+            cp CNAME dist/CNAME
+          fi
       - uses: peaceiris/actions-gh-pages@v4
         name: GitHub Pages Deploy
         with:
           github_token: ${{ github.token }}
-          publish_dir: "site/status-page/__sapper__/export/"
+          publish_dir: "dist"
           force_orphan: "false"
           user_name: "Bitris Status Bot"
           user_email: "status-bot@bitris.ai"
