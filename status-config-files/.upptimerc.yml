@@ -15,17 +15,25 @@ status-website:
   name: Bitris AI
   introTitle: "System Status"
   introMessage: "Real-time operational monitoring for all Bitris AI services"
+  
+  # Bitris branding
   logoUrl: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-logo.svg
   faviconSvg: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-icon.svg
+  
+  # Custom theme with Bitris colors
   themeUrl: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/theme.css
+  
+  # Navigation
   navbar:
     - title: Home
       href: https://www.bitris.ai
     - title: Support
       href: https://www.bitris.ai/support
+  
+  # Custom footer (removes Upptime branding)
   i18n:
     footer: "© 2025 Bitris AI - All systems monitored in real-time"
-
+    
 # Monitoring schedule
 workflowSchedule:
   uptime: "*/5 * * * *"
@@ -37,11 +45,12 @@ workflowSchedule:
 # No public assignees
 assignees: []
 
+# Disable homepage to prevent Upptime branding
 skipHomepage: true
 skipDescriptionForNotification: true
 
+# User agent
 user-agent: Bitris-Status-Monitor
-
 commitMessages:
   readmeContent: ":pencil: Update status summary [skip ci]"
   statusChange: "$SITE_NAME is $STATUS ($RESPONSE_CODE)"
