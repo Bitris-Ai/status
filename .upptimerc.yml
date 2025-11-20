@@ -26,6 +26,10 @@ status-website:
       href: https://www.bitris.ai/support
   i18n:
     footer: "© 2025 Bitris AI - All systems monitored in real-time"
+    url: ""
+    status: ""
+    history: ""
+    link: ""
 
 # Monitoring schedule
 workflowSchedule:
