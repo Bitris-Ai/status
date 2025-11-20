@@ -5,18 +5,18 @@
     "icon": "https://icons.duckduckgo.com/ip3/www.bitris.ai.ico",
     "slug": "bitris-ai-platform",
     "status": "down",
-    "uptime": "52.95%",
-    "uptimeDay": "52.95%",
-    "uptimeWeek": "52.95%",
-    "uptimeMonth": "52.95%",
-    "uptimeYear": "52.95%",
+    "uptime": "46.03%",
+    "uptimeDay": "46.03%",
+    "uptimeWeek": "46.03%",
+    "uptimeMonth": "46.03%",
+    "uptimeYear": "46.03%",
     "time": 0,
     "timeDay": 0,
     "timeWeek": 0,
     "timeMonth": 0,
     "timeYear": 0,
     "dailyMinutesDown": {
-      "2025-11-20": 437
+      "2025-11-20": 641
     }
   },
   {
@@ -25,18 +25,18 @@
     "icon": "https://icons.duckduckgo.com/ip3/www.bitris.ai.ico",
     "slug": "voice-services",
     "status": "down",
-    "uptime": "52.95%",
-    "uptimeDay": "52.95%",
-    "uptimeWeek": "52.95%",
-    "uptimeMonth": "52.95%",
-    "uptimeYear": "52.95%",
+    "uptime": "46.02%",
+    "uptimeDay": "46.02%",
+    "uptimeWeek": "46.02%",
+    "uptimeMonth": "46.02%",
+    "uptimeYear": "46.02%",
     "time": 0,
     "timeDay": 0,
     "timeWeek": 0,
     "timeMonth": 0,
     "timeYear": 0,
     "dailyMinutesDown": {
-      "2025-11-20": 437
+      "2025-11-20": 641
     }
   },
   {
@@ -56,7 +56,7 @@
     "timeMonth": 0,
     "timeYear": 0,
     "dailyMinutesDown": {
-      "2025-11-20": 162
+      "2025-11-20": 369
     }
   }
 ]
