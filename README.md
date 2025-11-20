@@ -32,16 +32,14 @@ The result: clients always see an accurate, near-real-time view of platform reli
 
 Every part of the status experience reflects Bitris AI’s design principles:
 
-* Official Bitris AI logos and branding across all system pages.
-* Custom Bitris-branded SVG charts and sparklines for a unified visual identity.
-* Optimized layouts that mirror the quality and polish of our main platform.
+- Official Bitris AI logos and branding across all system pages.
+- Custom Bitris-branded SVG charts and sparklines for a unified visual identity.
+- Optimized layouts that mirror the quality and polish of our main platform.
 
 ## Operational Notes
 
-* Monitoring is powered by a redundant, cloud-native architecture.
-* Updates to endpoints or visual identity automatically flow through scheduled deployments.
-* A manual rebuild can be triggered for instant propagation after configuration changes.
-
-
+- Monitoring is powered by a redundant, cloud-native architecture.
+- Updates to endpoints or visual identity automatically flow through scheduled deployments.
+- A manual rebuild can be triggered for instant propagation after configuration changes.
 
 **© 2025 Bitris AI — Enterprise-level reliability, delivered with clarity and trust.**
