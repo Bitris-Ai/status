@@ -1,11 +1,12 @@
-const SUMMARY_URL = 'https://raw.githubusercontent.com/Bitris-Ai/status/master/history/summary.json';
-const API_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/master/api';
-const GRAPH_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/master/graphs';
+const SUMMARY_URL = 'https://raw.githubusercontent.com/Bitris-Ai/status/main/history/summary.json';
+const API_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/main/api';
+const GRAPH_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/main/graphs';
 const GITHUB_REPO = 'Bitris-Ai/status';
 const GITHUB_ISSUES_ENDPOINT = `https://api.github.com/repos/${GITHUB_REPO}/issues`;
 const INCIDENT_REPORT_URL = `https://github.com/${GITHUB_REPO}/issues/new?labels=incident`;
 const STORAGE_KEYS = {
-  githubToken: 'bitris-status-github-token'
+  githubToken: 'bitris-status-github-token',
+  theme: 'bitris-status-theme'
 };
 const STATUS_REFRESH_INTERVAL = 30_000; // 30s interval for live telemetry polling
 const INCIDENT_REFRESH_INTERVAL = 120_000; // keep incidents fresh every 2 minutes
@@ -38,6 +39,9 @@ const incidentGroups = document.getElementById('incident-groups');
 const githubAuthBtn = document.getElementById('github-auth-btn');
 const githubAuthHint = document.getElementById('github-auth-hint');
 const reportIncidentLink = document.getElementById('report-incident');
+const themeToggle = document.getElementById('theme-toggle');
+const themeToggleText = document.querySelector('.theme-toggle__text');
+const themeToggleIcon = document.querySelector('.theme-toggle__icon');
 
 const insights = {
   availability: document.getElementById('insight-availability'),
@@ -60,6 +64,7 @@ let hydrateInFlight = false;
 let lastIncidentSync = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   if (reportIncidentLink) {
     reportIncidentLink.href = INCIDENT_REPORT_URL;
   }
@@ -73,6 +78,50 @@ function startAutoRefresh() {
   hydrateTimer = setInterval(() => {
     hydrate({ reason: 'interval', silent: true });
   }, STATUS_REFRESH_INTERVAL);
+}
+
+function initTheme() {
+  const storedTheme = localStorage.getItem(STORAGE_KEYS.theme);
+  const media = window.matchMedia?.('(prefers-color-scheme: dark)');
+  const prefersDark = media?.matches;
+  const initialTheme = storedTheme || (prefersDark ? 'dark' : 'light');
+  applyTheme(initialTheme);
+
+  themeToggle?.addEventListener('click', () => {
+    const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(next, true);
+  });
+
+  if (media) {
+    const syncSystemPreference = (event) => {
+      if (!localStorage.getItem(STORAGE_KEYS.theme)) {
+        applyTheme(event.matches ? 'dark' : 'light');
+      }
+    };
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', syncSystemPreference);
+    } else if (typeof media.addListener === 'function') {
+      media.addListener(syncSystemPreference);
+    }
+  }
+}
+
+function applyTheme(theme, persist = false) {
+  document.body.dataset.theme = theme;
+  if (persist) {
+    localStorage.setItem(STORAGE_KEYS.theme, theme);
+  }
+  if (themeToggle) {
+    const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    themeToggle.setAttribute('aria-label', label);
+    themeToggle.setAttribute('aria-pressed', String(theme === 'dark'));
+  }
+  if (themeToggleText) {
+    themeToggleText.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
+  }
+  if (themeToggleIcon) {
+    themeToggleIcon.textContent = theme === 'dark' ? '🌙' : '🌤️';
+  }
 }
 
 function registerControls() {
@@ -326,9 +375,9 @@ async function loadIncidents() {
   incidentsMeta.textContent = githubToken ? 'Syncing GitHub incidents (authenticated)…' : 'Syncing GitHub incidents…';
   try {
     const [openIncidents, maintenance, recent] = await Promise.all([
-      fetchIssues('state=open&labels=incident&per_page=5'),
-      fetchIssues('state=open&labels=maintenance&per_page=5'),
-      fetchIssues('state=closed&labels=incident&per_page=5')
+      fetchIssuesByAnyLabel(['incident', 'status'], 'open', 8),
+      fetchIssuesByAnyLabel(['maintenance'], 'open', 5),
+      fetchIssuesByAnyLabel(['incident', 'status'], 'closed', 8)
     ]);
 
     incidentsState = { open: openIncidents.length, maintenance: maintenance.length };
@@ -358,6 +407,32 @@ async function fetchIssues(query) {
     throw new Error(`GitHub API ${response.status}`);
   }
   return response.json();
+}
+
+async function fetchIssuesByAnyLabel(labels = [], state = 'open', perPage = 5) {
+  if (!labels.length) return [];
+  const requests = labels.map((label) =>
+    fetchIssues(`state=${state}&labels=${encodeURIComponent(label)}&per_page=${perPage}`)
+  );
+  const results = await Promise.all(requests);
+  const merged = results.flat();
+  return dedupeIssues(merged).sort((a, b) => issueTimestamp(b) - issueTimestamp(a));
+}
+
+function dedupeIssues(issues) {
+  const seen = new Set();
+  return issues.filter((issue) => {
+    if (seen.has(issue.id)) {
+      return false;
+    }
+    seen.add(issue.id);
+    return true;
+  });
+}
+
+function issueTimestamp(issue) {
+  const date = issue?.closed_at || issue?.updated_at || issue?.created_at;
+  return date ? new Date(date).getTime() : 0;
 }
 
 function renderIncidentGroups({ open = [], maintenance = [], recent = [] }) {

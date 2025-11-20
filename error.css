@@ -1,0 +1,199 @@
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --border: rgba(15, 23, 42, 0.08);
+  --brand: #6ea8ff;
+  --brand-alt: #4f63ff;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --shadow: 0 35px 65px rgba(15, 23, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(circle at 10% -15%, rgba(110, 168, 255, 0.2), transparent 45%),
+    radial-gradient(circle at 80% 0%, rgba(159, 209, 255, 0.25), transparent 38%),
+    linear-gradient(180deg, #f8fafc 0%, #ffffff 60%, #f1f5ff 100%);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.shell {
+  width: min(960px, 92vw);
+  margin: 0 auto;
+  padding: 4rem 0 3rem;
+}
+
+.hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.brand {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.brand img {
+  width: 82px;
+  height: 82px;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.hero h1 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: clamp(2rem, 5vw, 2.7rem);
+}
+
+.lede {
+  margin: 0;
+  max-width: 520px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.btn.primary {
+  background: linear-gradient(120deg, var(--brand), var(--brand-alt));
+  color: #ffffff;
+  box-shadow: 0 15px 35px rgba(79, 99, 255, 0.3);
+}
+
+.btn.ghost {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 1.5rem;
+  margin: 3rem 0;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.05);
+}
+
+.card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+.card p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.card.highlight {
+  background: linear-gradient(135deg, rgba(110, 168, 255, 0.12), #ffffff);
+}
+
+.support {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.support span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.support a {
+  text-decoration: none;
+  color: var(--brand-alt);
+  font-weight: 600;
+}
+
+.card dl {
+  margin: 0;
+}
+
+.card dl div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding: 0.45rem 0;
+}
+
+.card dl dt {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.card dl dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.muted {
+  margin-top: 1rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+footer {
+  text-align: center;
+  color: var(--text-muted);
+}
+
+@media (max-width: 720px) {
+  .brand {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero {
+    padding: 1.75rem;
+  }
+}
