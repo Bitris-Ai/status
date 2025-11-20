@@ -4,20 +4,20 @@ This repository powers the public status portal at https://status.bitris.ai. Wor
 
 ## Monitored Surfaces
 
-| Service | Endpoint | Purpose |
-| --- | --- | --- |
-| Bitris AI Platform | https://www.bitris.ai/api/status | Core API health & dependency rollups |
-| Voice Services | https://www.bitris.ai/api/voice/status | Latency + availability for voice synthesis |
+| Service            | Endpoint                               | Purpose                                    |
+| ------------------ | -------------------------------------- | ------------------------------------------ |
+| Bitris AI Platform | https://www.bitris.ai/api/status       | Core API health & dependency rollups       |
+| Voice Services     | https://www.bitris.ai/api/voice/status | Latency + availability for voice synthesis |
 
 ## Automation Cadence
 
-| Workflow | Interval | Notes |
-| --- | --- | --- |
-| `uptime.yml` | */5 * * * * | Availability + incident tracking |
-| `response-time.yml` | 0 */6 * * * | Latency sampling |
-| `graphs.yml` | 0 0 * * * | Generate historical charts |
-| `site.yml` | 0 1 * * * | Build & deploy static site |
-| `summary.yml` | 0 0 * * * | Update repo summaries |
+| Workflow            | Interval       | Notes                            |
+| ------------------- | -------------- | -------------------------------- |
+| `uptime.yml`        | _/5 _ \* \* \* | Availability + incident tracking |
+| `response-time.yml` | 0 _/6 _ \* \*  | Latency sampling                 |
+| `graphs.yml`        | 0 0 \* \* \*   | Generate historical charts       |
+| `site.yml`          | 0 1 \* \* \*   | Build & deploy static site       |
+| `summary.yml`       | 0 0 \* \* \*   | Update repo summaries            |
 
 ## Branding Assets
 
@@ -38,4 +38,5 @@ This repository powers the public status portal at https://status.bitris.ai. Wor
 3. Run `Static Site CI` in Actions to redeploy immediately after config changes.
 
 ---
+
 © 2025 Bitris AI. All monitoring data, branding, and copy remain internal—no external attribution or vendor disclosure anywhere on the portal.
