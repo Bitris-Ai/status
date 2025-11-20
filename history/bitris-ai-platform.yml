@@ -1,7 +1,7 @@
 url: https://www.bitris.ai/api/status
-status: down
-code: 502
-responseTime: 897
-lastUpdated: 2025-11-20T12:04:31.180Z
+status: up
+code: 200
+responseTime: 713
+lastUpdated: 2025-11-20T22:24:14.014Z
 startTime: 2025-11-20T03:31:58.134Z
 generator: Upptime <https://github.com/upptime/upptime>
