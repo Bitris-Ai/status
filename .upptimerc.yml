@@ -18,6 +18,7 @@ status-website:
   logoUrl: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-logo.svg
   faviconSvg: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-icon.svg
   themeUrl: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/theme.css?v=2
+  js: https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/custom.js
   navbar:
     - title: Home
       href: https://www.bitris.ai
