@@ -9,6 +9,9 @@ sites:
   - name: Voice Services
     url: https://www.bitris.ai/api/voice/status
     maxResponseTime: 5000
+  - name: Bitris Web Interface
+    url: https://www.bitris.ai/
+    maxResponseTime: 5000
 
 status-website:
   cname: status.bitris.ai
@@ -36,7 +39,7 @@ status-website:
     
 # Monitoring schedule
 workflowSchedule:
-  uptime: "*/5 * * * *"
+  uptime: "* * * * *"
   responseTime: "0 */6 * * *"
   graphs: "0 0 * * *"
   staticSite: "0 1 * * *"
