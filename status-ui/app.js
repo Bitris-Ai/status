@@ -7,6 +7,8 @@ const INCIDENT_REPORT_URL = `https://github.com/${GITHUB_REPO}/issues/new?labels
 const STORAGE_KEYS = {
   githubToken: 'bitris-status-github-token'
 };
+const STATUS_REFRESH_INTERVAL = 30_000; // 30s interval for live telemetry polling
+const INCIDENT_REFRESH_INTERVAL = 120_000; // keep incidents fresh every 2 minutes
 
 const RANGE_LABEL = {
   day: '24h',
@@ -53,6 +55,9 @@ let currentFilter = 'all';
 let searchQuery = '';
 let incidentsState = { open: 0, maintenance: 0 };
 let githubToken = localStorage.getItem(STORAGE_KEYS.githubToken) || '';
+let hydrateTimer = null;
+let hydrateInFlight = false;
+let lastIncidentSync = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (reportIncidentLink) {
@@ -60,8 +65,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   updateGithubUI();
   registerControls();
-  hydrate();
+  hydrate().finally(startAutoRefresh);
 });
+
+function startAutoRefresh() {
+  if (hydrateTimer) return;
+  hydrateTimer = setInterval(() => {
+    hydrate({ reason: 'interval', silent: true });
+  }, STATUS_REFRESH_INTERVAL);
+}
 
 function registerControls() {
   rangeButtons.forEach((btn) =>
@@ -80,25 +92,38 @@ function registerControls() {
   githubAuthBtn?.addEventListener('click', handleGithubAuthToggle);
 }
 
-async function hydrate() {
+async function hydrate(options = {}) {
+  const { reason = 'manual', silent = false } = options;
+  if (hydrateInFlight) return;
+  hydrateInFlight = true;
+  const shouldRefreshIncidents = Date.now() - lastIncidentSync >= INCIDENT_REFRESH_INTERVAL;
   try {
-    setServicesPlaceholder('Loading live telemetry…');
+    if (!silent || services.length === 0) {
+      setServicesPlaceholder('Loading live telemetry…');
+    }
     services = await fetchJSON(`${SUMMARY_URL}?t=${Date.now()}`);
     renderServices();
     updateGlobalStatus();
     updateInsights();
     applyFilters();
     await updateRangeMetrics();
-    lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
-    loadIncidents();
+    lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()} (${reason})`;
+    if (shouldRefreshIncidents) {
+      await loadIncidents();
+      lastIncidentSync = Date.now();
+    }
   } catch (error) {
     console.error('Unable to hydrate status UI', error);
-    servicesContainer.innerHTML = getErrorMarkup(error.message);
-    servicesEmpty?.setAttribute('hidden', 'hidden');
-    document.getElementById('retry')?.addEventListener('click', hydrate);
-    statusTitle.textContent = 'Telemetry unavailable';
-    statusSubtitle.textContent = 'We could not reach the monitoring API. Please retry shortly.';
-    statusBanner.classList.add('status-warning');
+    if (!silent) {
+      servicesContainer.innerHTML = getErrorMarkup(error.message);
+      servicesEmpty?.setAttribute('hidden', 'hidden');
+      document.getElementById('retry')?.addEventListener('click', () => hydrate({ reason: 'retry' }));
+      statusTitle.textContent = 'Telemetry unavailable';
+      statusSubtitle.textContent = 'We could not reach the monitoring API. Please retry shortly.';
+      statusBanner.classList.add('status-warning');
+    }
+  } finally {
+    hydrateInFlight = false;
   }
 }
 
@@ -461,7 +486,9 @@ function handleGithubAuthToggle() {
     githubToken = '';
     localStorage.removeItem(STORAGE_KEYS.githubToken);
     updateGithubUI();
-    loadIncidents();
+    loadIncidents().finally(() => {
+      lastIncidentSync = Date.now();
+    });
     return;
   }
 
@@ -474,7 +501,9 @@ function handleGithubAuthToggle() {
   githubToken = cleaned;
   localStorage.setItem(STORAGE_KEYS.githubToken, githubToken);
   updateGithubUI();
-  loadIncidents();
+  loadIncidents().finally(() => {
+    lastIncidentSync = Date.now();
+  });
 }
 
 function updateGithubUI() {
