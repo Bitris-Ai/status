@@ -30,7 +30,20 @@
   --shadow-orb: 0 18px 48px rgba(110, 168, 255, 0.25);
 }
 
-/* Hide Upptime branding */
+/* Hide Upptime branding - AGGRESSIVE */
+footer * {
+  display: none !important;
+}
+
+footer::before {
+  content: "© 2025 Bitris AI - All systems monitored in real-time" !important;
+  display: block !important;
+  color: var(--text-muted) !important;
+  font-size: 0.875rem !important;
+  text-align: center !important;
+  padding: 2.5rem 0 !important;
+}
+
 a[href*="upptime.js.org"],
 a[href*="github.com/upptime"],
 footer a[href*="anandchowdhary"],
@@ -453,4 +466,18 @@ select:focus {
 .response-time-slow {
   color: var(--status-down) !important;
   font-weight: 600 !important;
+}
+/* Bitris footer branding removal script */
+body::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  animation: remove-branding 0.1s forwards;
+}
+
+@keyframes remove-branding {
+  to {
+    /* This triggers the script via animation-name event */
+  }
 }
