@@ -26,7 +26,29 @@ a[href*="upptime.js.org"],
 a[href*="github.com/upptime"],
 footer a[href*="anandchowdhary"],
 footer a[href*="pabio.com"],
-.footer-upptime-branding {
+.footer-upptime-branding,
+footer p:has(a[href*="upptime"]),
+footer div:has(a[href*="upptime"]),
+footer span:has(a[href*="upptime"]),
+footer small:has(a[href*="upptime"]),
+footer .text-sm:has(a[href*="upptime"]) {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Hide any footer paragraph that contains links */
+footer p a,
+footer .text-sm a,
+footer small a {
+  display: none !important;
+}
+
+/* Also hide the parent paragraph if it only contains hidden links */
+footer p:not(:has(*:not(a))),
+footer .text-sm:not(:has(*:not(a))),
+footer small:not(:has(*:not(a))) {
   display: none !important;
 }
 
