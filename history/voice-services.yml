@@ -1,7 +1,7 @@
 url: https://www.bitris.ai/api/voice/status
-status: down
-code: 502
-responseTime: 317
-lastUpdated: 2025-11-20T12:04:32.184Z
+status: up
+code: 200
+responseTime: 139
+lastUpdated: 2025-11-20T23:19:00.065Z
 startTime: 2025-11-20T03:31:59.242Z
 generator: Upptime <https://github.com/upptime/upptime>
