@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bitris AI • System Status</title>
     <link rel="preconnect" href="https://raw.githubusercontent.com" />
-    <link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-icon.svg" />
+    <link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/Bitris-Ai/status/main/assets/bitris-icon.svg" />
     <link rel="stylesheet" href="style.css" />
     <script defer src="app.js"></script>
   </head>
@@ -13,17 +13,23 @@
     <header class="site-header">
       <div class="container header-grid">
         <div class="brand">
-          <img src="https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-logo.svg" alt="Bitris AI" />
+          <img src="https://raw.githubusercontent.com/Bitris-Ai/status/main/assets/bitris-logo.svg" alt="Bitris AI" />
           <div>
             <p class="eyebrow">Real-time operations</p>
             <h1>Bitris AI System Status</h1>
           </div>
         </div>
-        <nav class="main-nav">
-          <a href="https://www.bitris.ai">Home</a>
-          <a href="https://www.bitris.ai/support">Support</a>
-          <a href="https://www.bitris.ai/security">Security</a>
-        </nav>
+        <div class="header-actions">
+          <nav class="main-nav">
+            <a href="https://www.bitris.ai">Home</a>
+            <a href="https://www.bitris.ai/support">Support</a>
+            <a href="https://www.bitris.ai/security">Security</a>
+          </nav>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode">
+            <span class="theme-toggle__icon" aria-hidden="true">🌤️</span>
+            <span class="theme-toggle__text">Dark mode</span>
+          </button>
+        </div>
       </div>
     </header>
 
