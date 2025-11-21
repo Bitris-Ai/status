@@ -871,11 +871,6 @@ function closeIncidentModal() {
 async function handleIncidentSubmit(event) {
   event.preventDefault();
   if (!incidentForm || !incidentFormFeedback) return;
-  if (!githubToken) {
-    incidentFormFeedback.textContent = 'Connect GitHub to submit incidents.';
-    incidentFormFeedback.style.color = 'var(--danger)';
-    return;
-  }
   const formData = new FormData(incidentForm);
   const title = formData.get('title')?.toString().trim();
   const service = formData.get('service')?.toString();
@@ -886,6 +881,21 @@ async function handleIncidentSubmit(event) {
     incidentFormFeedback.style.color = 'var(--danger)';
     return;
   }
+  const payload = { title, service, impact, body: bodyInput };
+
+  if (!githubToken) {
+    incidentFormFeedback.textContent = `Opening email draft to ${PUBLIC_INCIDENT_EMAIL}…`;
+    incidentFormFeedback.style.color = 'var(--text-muted)';
+    openIncidentEmail(payload);
+    incidentFormFeedback.textContent = `Email draft prepared for ${PUBLIC_INCIDENT_EMAIL}. Send it to finalize reporting.`;
+    incidentFormFeedback.style.color = 'var(--success)';
+    incidentForm.reset();
+    setTimeout(() => {
+      closeIncidentModal();
+    }, 1400);
+    return;
+  }
+
   incidentFormFeedback.textContent = 'Submitting to GitHub…';
   incidentFormFeedback.style.color = 'var(--text-muted)';
   try {
@@ -897,7 +907,7 @@ async function handleIncidentSubmit(event) {
       },
       body: JSON.stringify({
         title,
-        body: buildIncidentBody({ title, service, impact, body: bodyInput }),
+        body: buildIncidentBody(payload),
         labels: ['incident', service, impact]
       })
     });
@@ -929,4 +939,27 @@ ${body}
 
 ---
 Submitted via Bitris Status UI at ${new Date().toISOString()}`;
+}
+
+function buildIncidentEmailBody({ title, service, impact, body }) {
+  const locationHref = typeof window !== 'undefined' && window.location ? window.location.href : 'https://status.bitris.ai';
+  return `Title: ${title}
+Service: ${service}
+Impact: ${impact}
+
+Details:
+${body}
+
+---
+Submitted via Bitris Status UI (${locationHref}) on ${new Date().toLocaleString()}`;
+}
+
+function openIncidentEmail(payload) {
+  const subject = encodeURIComponent(`[Bitris Status] ${payload.title}`);
+  const emailBody = encodeURIComponent(buildIncidentEmailBody(payload));
+  const mailtoUrl = `mailto:${encodeURIComponent(PUBLIC_INCIDENT_EMAIL)}?subject=${subject}&body=${emailBody}`;
+  const newWindow = window.open(mailtoUrl, '_blank');
+  if (!newWindow) {
+    window.location.href = mailtoUrl;
+  }
 }
