@@ -21,9 +21,14 @@ const LIVE_SERVICE_CONFIG = [
     url: 'https://bitris.ai'
   }
 ];
+const PUBLIC_INCIDENT_EMAIL = 'support@bitris.ai';
+const LIVE_FETCH_FALLBACKS = [
+  (url) => url,
+  (url) => `https://cors.isomorphic-git.org/${url}`,
+  (url) => `https://r.jina.ai/https://${url.replace(/^https?:\/\//, '')}`
+];
 const GITHUB_REPO = 'Bitris-Ai/status';
 const GITHUB_ISSUES_ENDPOINT = `https://api.github.com/repos/${GITHUB_REPO}/issues`;
-const INCIDENT_REPORT_URL = `https://github.com/${GITHUB_REPO}/issues/new?labels=incident`;
 const STORAGE_KEYS = {
   githubToken: 'bitris-status-github-token',
   theme: 'bitris-status-theme'
@@ -222,12 +227,13 @@ function renderServices() {
     const card = document.createElement('article');
     card.className = 'service-card fade-in';
     card.dataset.slug = service.slug;
-    card.dataset.status = service.status;
+    const statusClass = service.status;
+    card.dataset.status = statusClass;
     card.dataset.match = `${service.name} ${service.url}`.toLowerCase();
-    const attentionLabel = service.status !== 'up' ? 'attention' : 'up';
-    const latencyLabel = service.live?.latency ? formatMs(service.live.latency) : formatMs(service.time);
-    const liveMessage = service.live?.message || service.url.replace(/^https?:\/\//, '');
-    const statusLabel = service.status === 'up' ? 'Operational' : service.status === 'degraded' ? 'Degraded' : 'Attention';
+    const chipClass = statusClass === 'down' ? 'down' : statusClass === 'up' ? 'up' : 'attention';
+    const latencyLabel = formatMs(determineLatencyValue(service));
+    const liveMessage = service.liveMessage || service.url.replace(/^https?:\/\//, '');
+    const statusLabel = getStatusLabel(statusClass);
 
     card.innerHTML = `
       <header>
@@ -235,7 +241,7 @@ function renderServices() {
           <p class="eyebrow">${service.url.replace(/^https?:\/\//, '')}</p>
           <h4>${service.name}</h4>
         </div>
-        <span class="status-chip ${attentionLabel}">
+        <span class="status-chip ${chipClass}">
           <span class="dot"></span>
           ${statusLabel}
         </span>
@@ -297,7 +303,7 @@ function updateInsights() {
   );
 
   const latencies = services
-    .map((svc) => Number(svc.live?.latency ?? svc.time))
+    .map((svc) => determineLatencyValue(svc))
     .filter((ms) => Number.isFinite(ms) && ms > 0);
   const medianLatency = latencies.length ? median(latencies) : 0;
   setInsightText(insights.latency, medianLatency ? formatMs(medianLatency) : '—');
@@ -376,6 +382,41 @@ function formatMs(value) {
   if (!Number.isFinite(parsed) || parsed <= 0) return '—';
   if (parsed < 1000) return `${Math.round(parsed)} ms`;
   return `${(parsed / 1000).toFixed(2)} s`;
+}
+
+function determineLatencyValue(service = {}) {
+  const liveLatency = Number(service.live?.latency);
+  if (Number.isFinite(liveLatency) && liveLatency > 0) {
+    return liveLatency;
+  }
+
+  const summaryLatency = Number(service.time);
+  if (Number.isFinite(summaryLatency) && summaryLatency > 0) {
+    return summaryLatency;
+  }
+
+  if (Array.isArray(service.history) && service.history.length) {
+    const numericHistory = service.history
+      .map((point) => Number(point?.value ?? point))
+      .filter((value) => Number.isFinite(value) && value > 0);
+    if (numericHistory.length) {
+      return numericHistory[numericHistory.length - 1];
+    }
+  }
+  return NaN;
+}
+
+function getStatusLabel(status = 'attention') {
+  switch (status) {
+    case 'up':
+      return 'Operational';
+    case 'degraded':
+      return 'Degraded';
+    case 'down':
+      return 'Outage';
+    default:
+      return 'Attention';
+  }
 }
 
 function graphUrl(slug) {
@@ -654,48 +695,134 @@ async function fetchJSON(url) {
   return response.json();
 }
 
+async function fetchWithFallback(url, options = {}) {
+  const config = { cache: 'no-store', ...options };
+  let lastError = null;
+  for (const transform of LIVE_FETCH_FALLBACKS) {
+    const resolvedUrl = transform(url);
+    try {
+      const response = await fetch(resolvedUrl, config);
+      return { response, resolvedUrl };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('All live probes failed');
+}
+
+function safeParseJson(text = '') {
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return {};
+  }
+}
+
+function extractSnippet(value = '', limit = 140) {
+  if (!value) return '';
+  return value
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, limit);
+}
+
+function deriveLiveStatus(payload = {}, response, latency) {
+  if (typeof payload.healthy === 'boolean') {
+    return payload.healthy ? 'up' : 'down';
+  }
+
+  const candidateStrings = [payload.status, payload.state, payload.mode].filter(
+    (value) => typeof value === 'string' && value.trim().length
+  );
+  for (const candidate of candidateStrings) {
+    const normalized = normalizeStatus(candidate);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  if (!response?.ok) {
+    if (!response) return 'attention';
+    if (response.status >= 500 || response.status === 0) return 'down';
+    if (response.status === 429) return 'degraded';
+    if (response.status >= 400) return 'attention';
+    return 'attention';
+  }
+
+  if (Number.isFinite(latency)) {
+    if (latency >= 4000) return 'down';
+    if (latency >= 2000) return 'degraded';
+  }
+
+  return 'up';
+}
+
+function deriveLiveMessage(payload = {}, response, rawText = '', resolvedUrl = '') {
+  const snippet = extractSnippet(rawText);
+  const candidates = [
+    payload.message,
+    payload.description,
+    payload.detail,
+    payload.note,
+    payload.summary,
+    snippet
+  ];
+  if (!response?.ok && response) {
+    candidates.push(`${response.status} ${response.statusText}`.trim());
+  }
+  const message = candidates.find((value) => typeof value === 'string' && value.trim().length);
+  if (message) return message.trim();
+  if (resolvedUrl) {
+    try {
+      const url = new URL(resolvedUrl);
+      return `Live probe reachable (${url.hostname})`;
+    } catch (error) {
+      return 'Live probe reachable';
+    }
+  }
+  return 'Live probe reachable';
+}
+
 async function fetchLiveTelemetry() {
   const timestamp = typeof performance !== 'undefined' && typeof performance.now === 'function'
     ? () => performance.now()
     : () => Date.now();
-  const results = await Promise.allSettled(
+
+  const entries = await Promise.all(
     LIVE_SERVICE_CONFIG.map(async (service) => {
       const start = timestamp();
-      const response = await fetch(service.liveUrl, { cache: 'no-store' });
-      const latency = timestamp() - start;
-      let payload = {};
       try {
-        payload = await response.json();
+        const { response, resolvedUrl } = await fetchWithFallback(service.liveUrl, { cache: 'no-store' });
+        const latency = timestamp() - start;
+        const rawText = await response.text();
+        const payload = safeParseJson(rawText);
+        return {
+          slug: service.slug,
+          ok: response.ok,
+          status: deriveLiveStatus(payload, response, latency),
+          message: deriveLiveMessage(payload, response, rawText, resolvedUrl),
+          latency,
+          updatedAt: payload.updatedAt || payload.timestamp || payload.lastChecked || new Date().toISOString(),
+          source: resolvedUrl,
+          payload
+        };
       } catch (error) {
-        payload = {};
+        const latency = timestamp() - start;
+        return {
+          slug: service.slug,
+          ok: false,
+          status: 'attention',
+          message: error?.message || 'Live probe unavailable',
+          latency: Number.isFinite(latency) ? latency : NaN,
+          updatedAt: new Date().toISOString(),
+          error: true
+        };
       }
-      return {
-        slug: service.slug,
-        ok: response.ok,
-        status: payload.status || (response.ok ? 'up' : 'down'),
-        message: payload.message || payload.description || response.statusText,
-        latency,
-        updatedAt: payload.updatedAt || new Date().toISOString()
-      };
     })
   );
 
-  const map = new Map();
-  results.forEach((result, index) => {
-    const config = LIVE_SERVICE_CONFIG[index];
-    if (result.status === 'fulfilled') {
-      map.set(config.slug, result.value);
-    } else {
-      map.set(config.slug, {
-        slug: config.slug,
-        status: 'unknown',
-        message: 'Live probe unavailable',
-        latency: NaN,
-        updatedAt: new Date().toISOString()
-      });
-    }
-  });
-  return map;
+  return new Map(entries.map((entry) => [entry.slug, entry]));
 }
 
 function mergeServiceData(summary = [], liveMap = new Map()) {
@@ -711,14 +838,15 @@ function mergeServiceData(summary = [], liveMap = new Map()) {
       status,
       uptime: summaryEntry.uptime || liveEntry?.uptime || '—',
       uptimeMonth: summaryEntry.uptimeMonth || summaryEntry.uptime,
-      time: summaryEntry.time || liveEntry?.latency || 0,
-      url: summaryEntry.url || svc.url
+      time: liveEntry?.latency || summaryEntry.time || 0,
+      url: summaryEntry.url || svc.url,
+      liveMessage: liveEntry?.message || summaryEntry.message || summaryEntry.description || ''
     };
   });
 }
 
 function normalizeStatus(status = 'unknown') {
-  const normalized = status.toLowerCase();
+  const normalized = String(status).toLowerCase();
   if (normalized.includes('degrad')) return 'degraded';
   if (normalized.includes('down') || normalized.includes('incident')) return 'down';
   if (normalized.includes('attention') || normalized.includes('maintenance')) return 'attention';

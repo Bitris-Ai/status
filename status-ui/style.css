@@ -172,7 +172,7 @@ img {
   gap: 0.75rem;
   align-items: flex-end;
 }
-
+  font-size: 0.8rem;
 .status-banner.status-warning {
   background: linear-gradient(120deg, rgba(248, 113, 113, 0.2), #fff4f3);
   border-color: rgba(248, 113, 113, 0.35);
@@ -242,11 +242,11 @@ img {
   border-radius: 1rem;
   padding: 1.25rem;
   box-shadow: 0 12px 30px rgba(79, 99, 255, 0.12);
-  min-height: 170px;
+  min-height: 150px;
 }
 
 .insight-value {
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
   font-weight: 600;
   margin: 0.25rem 0 0.4rem;
 }
@@ -548,6 +548,16 @@ img {
 .incident-card:first-of-type {
   border-top: none;
   padding-top: 0;
+.incident-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.incident-meta a {
+  margin-left: auto;
+}
 }
 
 .incident-card h5 {
