@@ -745,18 +745,13 @@ function extractSnippet(value = '', limit = 140) {
 }
 
 function deriveLiveStatus(payload = {}, response, latency, context = {}) {
-  if (typeof payload.healthy === 'boolean') {
-    return payload.healthy ? 'up' : 'down';
+  const declaredStatus = getDeclaredStatus(payload);
+  if (declaredStatus) {
+    return declaredStatus;
   }
 
-  const candidateStrings = [payload.status, payload.state, payload.mode].filter(
-    (value) => typeof value === 'string' && value.trim().length
-  );
-  for (const candidate of candidateStrings) {
-    const normalized = normalizeStatus(candidate);
-    if (normalized) {
-      return normalized;
-    }
+  if (typeof payload.healthy === 'boolean') {
+    return payload.healthy ? 'up' : 'down';
   }
 
   if (!response?.ok) {
@@ -772,6 +767,13 @@ function deriveLiveStatus(payload = {}, response, latency, context = {}) {
   }
 
   return 'up';
+}
+
+function getDeclaredStatus(payload = {}) {
+  const candidateStrings = [payload.status, payload.state, payload.mode]
+    .filter((value) => typeof value === 'string' && value.trim().length)
+    .map((value) => normalizeStatus(value));
+  return candidateStrings.find(Boolean);
 }
 
 function deriveLiveMessage(payload = {}, response, rawText = '', resolvedUrl = '') {
