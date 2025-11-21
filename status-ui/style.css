@@ -369,6 +369,13 @@ img {
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
+  white-space: nowrap;
+  max-width: 140px;
+  min-width: 110px;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .status-chip .dot {
