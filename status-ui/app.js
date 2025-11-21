@@ -698,11 +698,12 @@ async function fetchJSON(url) {
 async function fetchWithFallback(url, options = {}) {
   const config = { cache: 'no-store', ...options };
   let lastError = null;
-  for (const transform of LIVE_FETCH_FALLBACKS) {
+  for (let index = 0; index < LIVE_FETCH_FALLBACKS.length; index += 1) {
+    const transform = LIVE_FETCH_FALLBACKS[index];
     const resolvedUrl = transform(url);
     try {
       const response = await fetch(resolvedUrl, config);
-      return { response, resolvedUrl };
+      return { response, resolvedUrl, fallbackIndex: index };
     } catch (error) {
       lastError = error;
     }
@@ -712,11 +713,27 @@ async function fetchWithFallback(url, options = {}) {
 
 function safeParseJson(text = '') {
   if (!text) return {};
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    return {};
+  const trimmed = text.trim();
+  if (!trimmed) return {};
+  const attempt = (payload) => {
+    if (!payload) return {};
+    try {
+      return JSON.parse(payload);
+    } catch (error) {
+      return {};
+    }
+  };
+  const direct = attempt(trimmed);
+  if (Object.keys(direct).length) return direct;
+
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const sliced = trimmed.slice(firstBrace, lastBrace + 1);
+    const nested = attempt(sliced);
+    if (Object.keys(nested).length) return nested;
   }
+  return {};
 }
 
 function extractSnippet(value = '', limit = 140) {
@@ -727,7 +744,7 @@ function extractSnippet(value = '', limit = 140) {
     .slice(0, limit);
 }
 
-function deriveLiveStatus(payload = {}, response, latency) {
+function deriveLiveStatus(payload = {}, response, latency, context = {}) {
   if (typeof payload.healthy === 'boolean') {
     return payload.healthy ? 'up' : 'down';
   }
@@ -750,9 +767,8 @@ function deriveLiveStatus(payload = {}, response, latency) {
     return 'attention';
   }
 
-  if (Number.isFinite(latency)) {
-    if (latency >= 4000) return 'down';
-    if (latency >= 2000) return 'degraded';
+  if (context.fallbackIndex && context.fallbackIndex > 0) {
+    return 'attention';
   }
 
   return 'up';
@@ -793,18 +809,19 @@ async function fetchLiveTelemetry() {
     LIVE_SERVICE_CONFIG.map(async (service) => {
       const start = timestamp();
       try {
-        const { response, resolvedUrl } = await fetchWithFallback(service.liveUrl, { cache: 'no-store' });
+        const { response, resolvedUrl, fallbackIndex } = await fetchWithFallback(service.liveUrl, { cache: 'no-store' });
         const latency = timestamp() - start;
         const rawText = await response.text();
         const payload = safeParseJson(rawText);
         return {
           slug: service.slug,
           ok: response.ok,
-          status: deriveLiveStatus(payload, response, latency),
+          status: deriveLiveStatus(payload, response, latency, { fallbackIndex }),
           message: deriveLiveMessage(payload, response, rawText, resolvedUrl),
           latency,
           updatedAt: payload.updatedAt || payload.timestamp || payload.lastChecked || new Date().toISOString(),
           source: resolvedUrl,
+          fallbackIndex,
           payload
         };
       } catch (error) {
