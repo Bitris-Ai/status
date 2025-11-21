@@ -927,6 +927,20 @@ async function handleIncidentSubmit(event) {
       })
     });
     if (!response.ok) {
+      if (response.status === 403 || response.status === 401) {
+        incidentFormFeedback.textContent = `GitHub rejected submission (${response.status}). Opening email fallback…`;
+        incidentFormFeedback.style.color = 'var(--text-muted)';
+        setTimeout(() => {
+          openIncidentEmail(payload);
+          incidentFormFeedback.textContent = `Email draft prepared for ${PUBLIC_INCIDENT_EMAIL}. Send it to finalize reporting.`;
+          incidentFormFeedback.style.color = 'var(--success)';
+          incidentForm.reset();
+          setTimeout(() => {
+            closeIncidentModal();
+          }, 1400);
+        }, 800);
+        return;
+      }
       throw new Error(`GitHub responded with ${response.status}`);
     }
     incidentFormFeedback.textContent = 'Incident logged successfully.';
