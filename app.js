@@ -1,37 +1,11 @@
-const SUMMARY_URL = 'https://raw.githubusercontent.com/Bitris-Ai/status/main/history/summary.json';
-const API_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/main/api';
-const GRAPH_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/main/graphs';
-const LIVE_SERVICE_CONFIG = [
-  {
-    slug: 'bitris-ai-platform',
-    name: 'Bitris AI Platform',
-    liveUrl: 'https://www.bitris.ai/api/status',
-    url: 'https://www.bitris.ai/api/status'
-  },
-  {
-    slug: 'voice-services',
-    name: 'Voice Services',
-    liveUrl: 'https://www.bitris.ai/api/voice/status',
-    url: 'https://www.bitris.ai/api/voice/status'
-  },
-  {
-    slug: 'bitris-web-interface',
-    name: 'Bitris Web Interface',
-    liveUrl: 'https://www.bitris.ai/api/web-interface/status',
-    url: 'https://bitris.ai'
-  }
-];
-const PUBLIC_INCIDENT_EMAIL = 'support@bitris.ai';
-const LIVE_FETCH_FALLBACKS = [
-  (url) => url,
-  (url) => `https://cors.isomorphic-git.org/${url}`,
-  (url) => `https://r.jina.ai/https://${url.replace(/^https?:\/\//, '')}`
-];
+const SUMMARY_URL = 'https://raw.githubusercontent.com/Bitris-Ai/status/master/history/summary.json';
+const API_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/master/api';
+const GRAPH_BASE = 'https://raw.githubusercontent.com/Bitris-Ai/status/master/graphs';
 const GITHUB_REPO = 'Bitris-Ai/status';
 const GITHUB_ISSUES_ENDPOINT = `https://api.github.com/repos/${GITHUB_REPO}/issues`;
+const INCIDENT_REPORT_URL = `https://github.com/${GITHUB_REPO}/issues/new?labels=incident`;
 const STORAGE_KEYS = {
-  githubToken: 'bitris-status-github-token',
-  theme: 'bitris-status-theme'
+  githubToken: 'bitris-status-github-token'
 };
 const STATUS_REFRESH_INTERVAL = 30_000; // 30s interval for live telemetry polling
 const INCIDENT_REFRESH_INTERVAL = 120_000; // keep incidents fresh every 2 minutes
@@ -58,19 +32,12 @@ const statusTitle = document.getElementById('status-title');
 const statusSubtitle = document.getElementById('status-subtitle');
 const statusBanner = document.getElementById('status-banner');
 const lastUpdated = document.getElementById('last-updated');
-const refreshButton = document.getElementById('refresh-now');
 const searchInput = document.getElementById('service-search');
 const incidentsMeta = document.getElementById('incidents-meta');
 const incidentGroups = document.getElementById('incident-groups');
 const githubAuthBtn = document.getElementById('github-auth-btn');
 const githubAuthHint = document.getElementById('github-auth-hint');
-const incidentModal = document.getElementById('incident-modal');
-const incidentForm = document.getElementById('incident-form');
-const incidentFormFeedback = document.getElementById('incident-form-feedback');
-const openIncidentModalBtn = document.getElementById('open-incident-modal');
-const themeToggle = document.getElementById('theme-toggle');
-const themeToggleText = document.querySelector('.theme-toggle__text');
-const themeToggleIcon = document.querySelector('.theme-toggle__icon');
+const reportIncidentLink = document.getElementById('report-incident');
 
 const insights = {
   availability: document.getElementById('insight-availability'),
@@ -83,7 +50,6 @@ const insights = {
 const relativeTimeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
 let services = [];
-let liveTelemetry = new Map();
 let currentRange = 'week';
 let currentFilter = 'all';
 let searchQuery = '';
@@ -94,7 +60,9 @@ let hydrateInFlight = false;
 let lastIncidentSync = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
+  if (reportIncidentLink) {
+    reportIncidentLink.href = INCIDENT_REPORT_URL;
+  }
   updateGithubUI();
   registerControls();
   hydrate().finally(startAutoRefresh);
@@ -105,50 +73,6 @@ function startAutoRefresh() {
   hydrateTimer = setInterval(() => {
     hydrate({ reason: 'interval', silent: true });
   }, STATUS_REFRESH_INTERVAL);
-}
-
-function initTheme() {
-  const storedTheme = localStorage.getItem(STORAGE_KEYS.theme);
-  const media = window.matchMedia?.('(prefers-color-scheme: dark)');
-  const prefersDark = media?.matches;
-  const initialTheme = storedTheme || (prefersDark ? 'dark' : 'light');
-  applyTheme(initialTheme);
-
-  themeToggle?.addEventListener('click', () => {
-    const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(next, true);
-  });
-
-  if (media) {
-    const syncSystemPreference = (event) => {
-      if (!localStorage.getItem(STORAGE_KEYS.theme)) {
-        applyTheme(event.matches ? 'dark' : 'light');
-      }
-    };
-    if (typeof media.addEventListener === 'function') {
-      media.addEventListener('change', syncSystemPreference);
-    } else if (typeof media.addListener === 'function') {
-      media.addListener(syncSystemPreference);
-    }
-  }
-}
-
-function applyTheme(theme, persist = false) {
-  document.body.dataset.theme = theme;
-  if (persist) {
-    localStorage.setItem(STORAGE_KEYS.theme, theme);
-  }
-  if (themeToggle) {
-    const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
-    themeToggle.setAttribute('aria-label', label);
-    themeToggle.setAttribute('aria-pressed', String(theme === 'dark'));
-  }
-  if (themeToggleText) {
-    themeToggleText.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
-  }
-  if (themeToggleIcon) {
-    themeToggleIcon.textContent = theme === 'dark' ? '🌙' : '🌤️';
-  }
 }
 
 function registerControls() {
@@ -166,12 +90,6 @@ function registerControls() {
   });
 
   githubAuthBtn?.addEventListener('click', handleGithubAuthToggle);
-  refreshButton?.addEventListener('click', () => hydrate({ reason: 'manual-refresh' }));
-  openIncidentModalBtn?.addEventListener('click', openIncidentModal);
-  incidentModal?.querySelectorAll('[data-close-modal]')?.forEach((node) =>
-    node.addEventListener('click', closeIncidentModal)
-  );
-  incidentForm?.addEventListener('submit', handleIncidentSubmit);
 }
 
 async function hydrate(options = {}) {
@@ -183,12 +101,7 @@ async function hydrate(options = {}) {
     if (!silent || services.length === 0) {
       setServicesPlaceholder('Loading live telemetry…');
     }
-    const [summaryData, liveData] = await Promise.all([
-      fetchJSON(`${SUMMARY_URL}?t=${Date.now()}`),
-      fetchLiveTelemetry()
-    ]);
-    liveTelemetry = liveData;
-    services = mergeServiceData(summaryData, liveData);
+    services = await fetchJSON(`${SUMMARY_URL}?t=${Date.now()}`);
     renderServices();
     updateGlobalStatus();
     updateInsights();
@@ -227,13 +140,8 @@ function renderServices() {
     const card = document.createElement('article');
     card.className = 'service-card fade-in';
     card.dataset.slug = service.slug;
-    const statusClass = service.status;
-    card.dataset.status = statusClass;
+    card.dataset.status = service.status;
     card.dataset.match = `${service.name} ${service.url}`.toLowerCase();
-    const chipClass = statusClass === 'down' ? 'down' : statusClass === 'up' ? 'up' : 'attention';
-    const latencyLabel = formatMs(determineLatencyValue(service));
-    const liveMessage = service.liveMessage || service.url.replace(/^https?:\/\//, '');
-    const statusLabel = getStatusLabel(statusClass);
 
     card.innerHTML = `
       <header>
@@ -241,9 +149,9 @@ function renderServices() {
           <p class="eyebrow">${service.url.replace(/^https?:\/\//, '')}</p>
           <h4>${service.name}</h4>
         </div>
-        <span class="status-chip ${chipClass}">
+        <span class="status-chip ${service.status}">
           <span class="dot"></span>
-          ${statusLabel}
+          ${service.status === 'up' ? 'Operational' : 'Attention'}
         </span>
       </header>
       <div class="metric-grid">
@@ -257,16 +165,12 @@ function renderServices() {
         </div>
         <div class="metric">
           <span>Avg response</span>
-          <strong>${latencyLabel}</strong>
+          <strong>${formatMs(service.time)}</strong>
         </div>
       </div>
       <div class="graph-shell">
         <img src="${graphUrl(service.slug)}" alt="${service.name} response-time graph" loading="lazy" />
       </div>
-      <footer class="service-footer">
-        <p class="muted">${liveMessage}</p>
-        <a class="btn ghost" href="https://github.com/${GITHUB_REPO}/issues?q=${service.slug}" target="_blank" rel="noopener">Open incidents ↗</a>
-      </footer>
     `;
 
     fragment.appendChild(card);
@@ -302,9 +206,7 @@ function updateInsights() {
     `${services.length} surface${services.length === 1 ? '' : 's'}`
   );
 
-  const latencies = services
-    .map((svc) => determineLatencyValue(svc))
-    .filter((ms) => Number.isFinite(ms) && ms > 0);
+  const latencies = services.map((svc) => Number(svc.time)).filter((ms) => Number.isFinite(ms) && ms > 0);
   const medianLatency = latencies.length ? median(latencies) : 0;
   setInsightText(insights.latency, medianLatency ? formatMs(medianLatency) : '—');
 
@@ -384,41 +286,6 @@ function formatMs(value) {
   return `${(parsed / 1000).toFixed(2)} s`;
 }
 
-function determineLatencyValue(service = {}) {
-  const liveLatency = Number(service.live?.latency);
-  if (Number.isFinite(liveLatency) && liveLatency > 0) {
-    return liveLatency;
-  }
-
-  const summaryLatency = Number(service.time);
-  if (Number.isFinite(summaryLatency) && summaryLatency > 0) {
-    return summaryLatency;
-  }
-
-  if (Array.isArray(service.history) && service.history.length) {
-    const numericHistory = service.history
-      .map((point) => Number(point?.value ?? point))
-      .filter((value) => Number.isFinite(value) && value > 0);
-    if (numericHistory.length) {
-      return numericHistory[numericHistory.length - 1];
-    }
-  }
-  return NaN;
-}
-
-function getStatusLabel(status = 'attention') {
-  switch (status) {
-    case 'up':
-      return 'Operational';
-    case 'degraded':
-      return 'Degraded';
-    case 'down':
-      return 'Outage';
-    default:
-      return 'Attention';
-  }
-}
-
 function graphUrl(slug) {
   const suffix = GRAPH_RANGE_MAP[currentRange] || 'week';
   return `${GRAPH_BASE}/${slug}/response-time-${suffix}.png?t=${Date.now()}`;
@@ -459,9 +326,9 @@ async function loadIncidents() {
   incidentsMeta.textContent = githubToken ? 'Syncing GitHub incidents (authenticated)…' : 'Syncing GitHub incidents…';
   try {
     const [openIncidents, maintenance, recent] = await Promise.all([
-      fetchIssuesByAnyLabel(['incident', 'status'], 'open', 8),
-      fetchIssuesByAnyLabel(['maintenance'], 'open', 5),
-      fetchIssuesByAnyLabel(['incident', 'status'], 'closed', 8)
+      fetchIssues('state=open&labels=incident&per_page=5'),
+      fetchIssues('state=open&labels=maintenance&per_page=5'),
+      fetchIssues('state=closed&labels=incident&per_page=5')
     ]);
 
     incidentsState = { open: openIncidents.length, maintenance: maintenance.length };
@@ -491,32 +358,6 @@ async function fetchIssues(query) {
     throw new Error(`GitHub API ${response.status}`);
   }
   return response.json();
-}
-
-async function fetchIssuesByAnyLabel(labels = [], state = 'open', perPage = 5) {
-  if (!labels.length) return [];
-  const requests = labels.map((label) =>
-    fetchIssues(`state=${state}&labels=${encodeURIComponent(label)}&per_page=${perPage}`)
-  );
-  const results = await Promise.all(requests);
-  const merged = results.flat();
-  return dedupeIssues(merged).sort((a, b) => issueTimestamp(b) - issueTimestamp(a));
-}
-
-function dedupeIssues(issues) {
-  const seen = new Set();
-  return issues.filter((issue) => {
-    if (seen.has(issue.id)) {
-      return false;
-    }
-    seen.add(issue.id);
-    return true;
-  });
-}
-
-function issueTimestamp(issue) {
-  const date = issue?.closed_at || issue?.updated_at || issue?.created_at;
-  return date ? new Date(date).getTime() : 0;
 }
 
 function renderIncidentGroups({ open = [], maintenance = [], recent = [] }) {
@@ -693,302 +534,4 @@ async function fetchJSON(url) {
     throw new Error(`Request failed (${response.status})`);
   }
   return response.json();
-}
-
-async function fetchWithFallback(url, options = {}) {
-  const config = { cache: 'no-store', ...options };
-  let lastError = null;
-  for (let index = 0; index < LIVE_FETCH_FALLBACKS.length; index += 1) {
-    const transform = LIVE_FETCH_FALLBACKS[index];
-    const resolvedUrl = transform(url);
-    try {
-      const response = await fetch(resolvedUrl, config);
-      return { response, resolvedUrl, fallbackIndex: index };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError || new Error('All live probes failed');
-}
-
-function safeParseJson(text = '') {
-  if (!text) return {};
-  const trimmed = text.trim();
-  if (!trimmed) return {};
-  const attempt = (payload) => {
-    if (!payload) return {};
-    try {
-      return JSON.parse(payload);
-    } catch (error) {
-      return {};
-    }
-  };
-  const direct = attempt(trimmed);
-  if (Object.keys(direct).length) return direct;
-
-  const firstBrace = trimmed.indexOf('{');
-  const lastBrace = trimmed.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    const sliced = trimmed.slice(firstBrace, lastBrace + 1);
-    const nested = attempt(sliced);
-    if (Object.keys(nested).length) return nested;
-  }
-  return {};
-}
-
-function extractSnippet(value = '', limit = 140) {
-  if (!value) return '';
-  return value
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, limit);
-}
-
-function deriveLiveStatus(payload = {}, response, latency, context = {}) {
-  const declaredStatus = getDeclaredStatus(payload);
-  if (declaredStatus) {
-    return declaredStatus;
-  }
-
-  if (typeof payload.healthy === 'boolean') {
-    return payload.healthy ? 'up' : 'down';
-  }
-
-  if (!response?.ok) {
-    if (!response) return 'attention';
-    if (response.status >= 500 || response.status === 0) return 'down';
-    if (response.status === 429) return 'degraded';
-    if (response.status >= 400) return 'attention';
-    return 'attention';
-  }
-
-  return 'up';
-}
-
-function getDeclaredStatus(payload = {}) {
-  const candidateStrings = [payload.status, payload.state, payload.mode]
-    .filter((value) => typeof value === 'string' && value.trim().length)
-    .map((value) => normalizeStatus(value));
-  return candidateStrings.find(Boolean);
-}
-
-function deriveLiveMessage(payload = {}, response, rawText = '', resolvedUrl = '') {
-  const snippet = extractSnippet(rawText);
-  const candidates = [
-    payload.message,
-    payload.description,
-    payload.detail,
-    payload.note,
-    payload.summary,
-    snippet
-  ];
-  if (!response?.ok && response) {
-    candidates.push(`${response.status} ${response.statusText}`.trim());
-  }
-  const message = candidates.find((value) => typeof value === 'string' && value.trim().length);
-  if (message) return message.trim();
-  if (resolvedUrl) {
-    try {
-      const url = new URL(resolvedUrl);
-      return `Live probe reachable (${url.hostname})`;
-    } catch (error) {
-      return 'Live probe reachable';
-    }
-  }
-  return 'Live probe reachable';
-}
-
-async function fetchLiveTelemetry() {
-  const timestamp = typeof performance !== 'undefined' && typeof performance.now === 'function'
-    ? () => performance.now()
-    : () => Date.now();
-
-  const entries = await Promise.all(
-    LIVE_SERVICE_CONFIG.map(async (service) => {
-      const start = timestamp();
-      try {
-        const { response, resolvedUrl, fallbackIndex } = await fetchWithFallback(service.liveUrl, { cache: 'no-store' });
-        const latency = timestamp() - start;
-        const rawText = await response.text();
-        const payload = safeParseJson(rawText);
-        return {
-          slug: service.slug,
-          ok: response.ok,
-          status: deriveLiveStatus(payload, response, latency, { fallbackIndex }),
-          message: deriveLiveMessage(payload, response, rawText, resolvedUrl),
-          latency,
-          updatedAt: payload.updatedAt || payload.timestamp || payload.lastChecked || new Date().toISOString(),
-          source: resolvedUrl,
-          fallbackIndex,
-          payload
-        };
-      } catch (error) {
-        const latency = timestamp() - start;
-        return {
-          slug: service.slug,
-          ok: false,
-          status: 'attention',
-          message: error?.message || 'Live probe unavailable',
-          latency: Number.isFinite(latency) ? latency : NaN,
-          updatedAt: new Date().toISOString(),
-          error: true
-        };
-      }
-    })
-  );
-
-  return new Map(entries.map((entry) => [entry.slug, entry]));
-}
-
-function mergeServiceData(summary = [], liveMap = new Map()) {
-  const summaryBySlug = new Map(summary.map((svc) => [svc.slug, svc]));
-  return LIVE_SERVICE_CONFIG.map((svc) => {
-    const summaryEntry = summaryBySlug.get(svc.slug) || {};
-    const liveEntry = liveMap.get(svc.slug);
-    const status = normalizeStatus(liveEntry?.status || summaryEntry.status || 'unknown');
-    return {
-      ...summaryEntry,
-      ...svc,
-      live: liveEntry,
-      status,
-      uptime: summaryEntry.uptime || liveEntry?.uptime || '—',
-      uptimeMonth: summaryEntry.uptimeMonth || summaryEntry.uptime,
-      time: liveEntry?.latency || summaryEntry.time || 0,
-      url: summaryEntry.url || svc.url,
-      liveMessage: liveEntry?.message || summaryEntry.message || summaryEntry.description || ''
-    };
-  });
-}
-
-function normalizeStatus(status = 'unknown') {
-  const normalized = String(status).toLowerCase();
-  if (normalized.includes('degrad')) return 'degraded';
-  if (normalized.includes('down') || normalized.includes('incident')) return 'down';
-  if (normalized.includes('attention') || normalized.includes('maintenance')) return 'attention';
-  if (normalized.includes('up') || normalized.includes('operational') || normalized === 'ok' || normalized === 'healthy') return 'up';
-  return 'attention';
-}
-
-function openIncidentModal() {
-  if (!incidentModal) return;
-  incidentModal.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeIncidentModal() {
-  if (!incidentModal) return;
-  incidentModal.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-  incidentForm?.reset();
-  if (incidentFormFeedback) incidentFormFeedback.textContent = '';
-}
-
-async function handleIncidentSubmit(event) {
-  event.preventDefault();
-  if (!incidentForm || !incidentFormFeedback) return;
-  const formData = new FormData(incidentForm);
-  const title = formData.get('title')?.toString().trim();
-  const service = formData.get('service')?.toString();
-  const impact = formData.get('impact')?.toString();
-  const bodyInput = formData.get('body')?.toString().trim();
-  if (!title || !service || !impact || !bodyInput) {
-    incidentFormFeedback.textContent = 'Fill every field before submitting.';
-    incidentFormFeedback.style.color = 'var(--danger)';
-    return;
-  }
-  const payload = { title, service, impact, body: bodyInput };
-
-  if (!githubToken) {
-    incidentFormFeedback.textContent = `Opening email draft to ${PUBLIC_INCIDENT_EMAIL}…`;
-    incidentFormFeedback.style.color = 'var(--text-muted)';
-    openIncidentEmail(payload);
-    incidentFormFeedback.textContent = `Email draft prepared for ${PUBLIC_INCIDENT_EMAIL}. Send it to finalize reporting.`;
-    incidentFormFeedback.style.color = 'var(--success)';
-    incidentForm.reset();
-    setTimeout(() => {
-      closeIncidentModal();
-    }, 1400);
-    return;
-  }
-
-  incidentFormFeedback.textContent = 'Submitting to GitHub…';
-  incidentFormFeedback.style.color = 'var(--text-muted)';
-  try {
-    const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
-      method: 'POST',
-      headers: {
-        ...getGitHubHeaders(),
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        title,
-        body: buildIncidentBody(payload),
-        labels: ['incident', service, impact]
-      })
-    });
-    if (!response.ok) {
-      if (response.status === 403 || response.status === 401) {
-        incidentFormFeedback.textContent = `GitHub rejected submission (${response.status}). Opening email fallback…`;
-        incidentFormFeedback.style.color = 'var(--text-muted)';
-        setTimeout(() => {
-          openIncidentEmail(payload);
-          incidentFormFeedback.textContent = `Email draft prepared for ${PUBLIC_INCIDENT_EMAIL}. Send it to finalize reporting.`;
-          incidentFormFeedback.style.color = 'var(--success)';
-          incidentForm.reset();
-          setTimeout(() => {
-            closeIncidentModal();
-          }, 1400);
-        }, 800);
-        return;
-      }
-      throw new Error(`GitHub responded with ${response.status}`);
-    }
-    incidentFormFeedback.textContent = 'Incident logged successfully.';
-    incidentFormFeedback.style.color = 'var(--success)';
-    incidentForm.reset();
-    setTimeout(() => {
-      closeIncidentModal();
-      loadIncidents();
-    }, 1200);
-  } catch (error) {
-    incidentFormFeedback.textContent = error.message;
-    incidentFormFeedback.style.color = 'var(--danger)';
-  }
-}
-
-function buildIncidentBody({ title, service, impact, body }) {
-  return `### Service
-${service}
-
-### Impact
-${impact}
-
-### Details
-${body}
-
----
-Submitted via Bitris Status UI at ${new Date().toISOString()}`;
-}
-
-function buildIncidentEmailBody({ title, service, impact, body }) {
-  const locationHref = typeof window !== 'undefined' && window.location ? window.location.href : 'https://status.bitris.ai';
-  return `Title: ${title}
-Service: ${service}
-Impact: ${impact}
-
-Details:
-${body}
-
----
-Submitted via Bitris Status UI (${locationHref}) on ${new Date().toLocaleString()}`;
-}
-
-function openIncidentEmail(payload) {
-  const subject = encodeURIComponent(`[Bitris Status] ${payload.title}`);
-  const emailBody = encodeURIComponent(buildIncidentEmailBody(payload));
-  const mailtoUrl = `mailto:${encodeURIComponent(PUBLIC_INCIDENT_EMAIL)}?subject=${subject}&body=${emailBody}`;
-  const newWindow = window.open(mailtoUrl, '_blank');
-  if (!newWindow) {
-    window.location.href = mailtoUrl;
-  }
 }
