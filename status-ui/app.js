@@ -762,10 +762,6 @@ function deriveLiveStatus(payload = {}, response, latency, context = {}) {
     return 'attention';
   }
 
-  if (context.fallbackIndex && context.fallbackIndex > 0) {
-    return 'attention';
-  }
-
   return 'up';
 }
 
@@ -869,7 +865,7 @@ function normalizeStatus(status = 'unknown') {
   if (normalized.includes('degrad')) return 'degraded';
   if (normalized.includes('down') || normalized.includes('incident')) return 'down';
   if (normalized.includes('attention') || normalized.includes('maintenance')) return 'attention';
-  if (normalized.includes('up')) return 'up';
+  if (normalized.includes('up') || normalized.includes('operational') || normalized === 'ok' || normalized === 'healthy') return 'up';
   return 'attention';
 }
 
