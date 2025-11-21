@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bitris AI • System Status</title>
     <link rel="preconnect" href="https://raw.githubusercontent.com" />
-    <link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-icon.svg" />
+    <link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/Bitris-Ai/status/main/assets/bitris-icon.svg" />
     <link rel="stylesheet" href="style.css" />
     <script defer src="app.js"></script>
   </head>
@@ -13,17 +13,24 @@
     <header class="site-header">
       <div class="container header-grid">
         <div class="brand">
-          <img src="https://raw.githubusercontent.com/Bitris-Ai/status/master/assets/bitris-logo.svg" alt="Bitris AI" />
+          <img src="https://raw.githubusercontent.com/Bitris-Ai/status/main/assets/bitris-logo.svg" alt="Bitris AI" />
           <div>
             <p class="eyebrow">Real-time operations</p>
             <h1>Bitris AI System Status</h1>
+            <p class="tagline">Trusted telemetry across every customer surface.</p>
           </div>
         </div>
-        <nav class="main-nav">
-          <a href="https://www.bitris.ai">Home</a>
-          <a href="https://www.bitris.ai/support">Support</a>
-          <a href="https://www.bitris.ai/security">Security</a>
-        </nav>
+        <div class="header-actions">
+          <nav class="main-nav">
+            <a href="https://www.bitris.ai">Home</a>
+            <a href="https://www.bitris.ai/support">Support</a>
+            <a href="https://www.bitris.ai/security">Security</a>
+          </nav>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode">
+            <span class="theme-toggle__icon" aria-hidden="true">🌤️</span>
+            <span class="theme-toggle__text">Dark mode</span>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -34,7 +41,10 @@
           <h2 id="status-title">Loading status…</h2>
           <p id="status-subtitle">Checking each monitored surface in real time.</p>
         </div>
-        <div class="pill" id="last-updated">Last updated: —</div>
+        <div class="status-meta">
+          <div class="pill" id="last-updated">Last updated: —</div>
+          <button class="btn ghost" id="refresh-now" type="button">Refresh</button>
+        </div>
       </section>
 
       <section class="insight-deck" aria-live="polite">
@@ -67,7 +77,10 @@
 
       <section>
         <div class="section-header">
-          <h3>Monitored services</h3>
+          <div>
+            <h3>Monitored services</h3>
+            <p class="section-note">Live probes refresh every 30 seconds. Historical uptime badges follow the selected window.</p>
+          </div>
           <div class="window-controls">
             <button data-range="day">24h</button>
             <button data-range="week" class="active">7d</button>
@@ -108,7 +121,7 @@
             <h3>Incident &amp; maintenance log</h3>
           </div>
           <div class="incident-actions">
-            <a class="btn ghost" id="report-incident" href="https://github.com/Bitris-Ai/status/issues/new?labels=incident" target="_blank" rel="noopener">Report incident</a>
+            <button class="btn ghost" id="open-incident-modal" type="button">Report incident</button>
             <button class="btn" id="github-auth-btn" type="button">Connect GitHub</button>
           </div>
         </div>
@@ -123,5 +136,51 @@
         <p>© 2025 Bitris AI. All telemetry powered by our internal observability mesh.</p>
       </div>
     </footer>
+
+    <div class="modal" id="incident-modal" aria-hidden="true">
+      <div class="modal__backdrop" data-close-modal></div>
+      <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="incident-modal-title">
+        <header class="modal__header">
+          <div>
+            <p class="eyebrow">Ops escalation</p>
+            <h3 id="incident-modal-title">Report an incident</h3>
+          </div>
+          <button class="icon-button" type="button" data-close-modal aria-label="Close incident form">✕</button>
+        </header>
+        <form id="incident-form">
+          <label>
+            <span>Title</span>
+            <input type="text" name="title" required maxlength="120" placeholder="e.g. Voice webhook latency" />
+          </label>
+          <label>
+            <span>Affected surface</span>
+            <select name="service" required>
+              <option value="">Select a service</option>
+              <option value="bitris-ai-platform">Bitris AI Platform</option>
+              <option value="voice-services">Voice Services</option>
+              <option value="bitris-web-interface">Bitris Web Interface</option>
+            </select>
+          </label>
+          <label>
+            <span>Impact tier</span>
+            <select name="impact" required>
+              <option value="P1">P1 · Major outage</option>
+              <option value="P2">P2 · Partial degradation</option>
+              <option value="Maintenance">Maintenance window</option>
+            </select>
+          </label>
+          <label>
+            <span>Description</span>
+            <textarea name="body" rows="4" placeholder="Describe what you're seeing, timeframe, customer impact." required></textarea>
+          </label>
+          <p class="muted small">Incidents post directly to GitHub when you're authenticated. Otherwise we'll prep an email to support@bitris.ai for you.</p>
+          <div class="modal__actions">
+            <button type="button" class="btn ghost" data-close-modal>Cancel</button>
+            <button type="submit" class="btn" id="incident-submit">Submit</button>
+          </div>
+          <p class="muted small" id="incident-form-feedback" role="status"></p>
+        </form>
+      </div>
+    </div>
   </body>
 </html>
