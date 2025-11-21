@@ -355,10 +355,19 @@ img {
   justify-content: space-between;
   gap: 0.75rem;
   align-items: center;
+  min-width: 0;
+}
+
+.service-card header > div:first-child {
+  flex: 1;
+  min-width: 0;
 }
 
 .service-card h4 {
   margin: 0.1rem 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-chip {
