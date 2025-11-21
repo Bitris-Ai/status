@@ -18,7 +18,7 @@ const LIVE_SERVICE_CONFIG = [
     slug: 'bitris-web-interface',
     name: 'Bitris Web Interface',
     liveUrl: 'https://www.bitris.ai/api/web-interface/status',
-    url: 'https://bitris.ai'
+    url: 'https://www.bitris.ai/api/web-interface/status'
   }
 ];
 const PUBLIC_INCIDENT_EMAIL = 'support@bitris.ai';
