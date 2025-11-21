@@ -172,7 +172,7 @@ img {
   gap: 0.75rem;
   align-items: flex-end;
 }
-
+  font-size: 0.8rem;
 .status-banner.status-warning {
   background: linear-gradient(120deg, rgba(248, 113, 113, 0.2), #fff4f3);
   border-color: rgba(248, 113, 113, 0.35);
@@ -236,24 +236,41 @@ img {
   gap: 1rem;
 }
 
+@media (min-width: 1100px) {
+  .insight-deck {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
 .insight-card {
   background: linear-gradient(140deg, rgba(110, 168, 255, 0.12), rgba(255, 255, 255, 0.95));
   border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 1.25rem;
   box-shadow: 0 12px 30px rgba(79, 99, 255, 0.12);
-  min-height: 170px;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.insight-card p {
+  margin: 0;
 }
 
 .insight-value {
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
   font-weight: 600;
-  margin: 0.25rem 0 0.4rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .insight-note {
-  margin: 0;
   color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
 .service-controls {
@@ -557,14 +574,14 @@ img {
 .incident-card p {
   margin: 0 0 0.5rem;
   color: var(--text-muted);
-}
-
-.incident-meta {
-  display: flex;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.incident-meta {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1rem;
   align-items: center;
@@ -574,6 +591,7 @@ img {
 .incident-meta a {
   color: var(--brand);
   text-decoration: none;
+  margin-left: auto;
 }
 
 .tag {
